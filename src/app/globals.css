@@ -1,26 +1,288 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+/* ────────────────────────────────────────────────────────────
+   Azulejo — kalkwit, kobaltblauw, oker.
+   Eén set semantische tokens, licht en donker.
+   ──────────────────────────────────────────────────────────── */
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+:root {
+  --shell: #f7f3ec;
+  --surface: #ffffff;
+  --surface-2: #f2f5fa;
+  --ink: #16233a;
+  --ink-soft: #5a6a83;
+  /* Alle tekstkleuren halen minstens 4.5:1 op elk van de drie achtergronden
+     (shell, surface, surface-2). Nagerekend, niet op het oog gekozen. */
+  --ink-faint: #616f83;
+  --line: #dfe5ee;
+  --line-strong: #c3d2e4;
+
+  --brand: #1b4b9c;
+  --brand-hover: #143a79;
+  --brand-soft: #eaf1fa;
+  --brand-mid: #6fa0dc;
+  --brand-pale: #bbd3f0;
+  --on-brand: #ffffff;
+
+  --accent: #a35e00;
+  --accent-soft: #fdf3e0;
+
+  --ok: #2d7b5c;
+  --ok-soft: #e8f4ef;
+  --bad: #b84a36;
+  --bad-soft: #fbeeeb;
+
+  --radius: 14px;
+  --shadow: 0 1px 2px rgb(22 35 58 / 0.05), 0 8px 24px -12px rgb(22 35 58 / 0.18);
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --shell: #0d1420;
+    --surface: #141d2c;
+    --surface-2: #1b2637;
+    --ink: #e8eef7;
+    --ink-soft: #9fb0c7;
+    --ink-faint: #7e8fa7;
+    --line: #263346;
+    --line-strong: #33455e;
+
+    --brand: #7fadea;
+    --brand-hover: #a3c4f1;
+    --brand-soft: #1a2942;
+    --brand-mid: #5b8fd0;
+    --brand-pale: #33507a;
+    --on-brand: #0d1420;
+
+    --accent: #e5aa48;
+    --accent-soft: #2c2415;
+
+    --ok: #63bd97;
+    --ok-soft: #16302a;
+    --bad: #e08370;
+    --bad-soft: #331f1b;
+
+    --shadow: 0 1px 2px rgb(0 0 0 / 0.3), 0 8px 24px -12px rgb(0 0 0 / 0.6);
   }
 }
 
+@theme inline {
+  --color-shell: var(--shell);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-ink: var(--ink);
+  --color-ink-soft: var(--ink-soft);
+  --color-ink-faint: var(--ink-faint);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-brand: var(--brand);
+  --color-brand-hover: var(--brand-hover);
+  --color-brand-soft: var(--brand-soft);
+  --color-brand-mid: var(--brand-mid);
+  --color-brand-pale: var(--brand-pale);
+  --color-on-brand: var(--on-brand);
+  --color-accent: var(--accent);
+  --color-accent-soft: var(--accent-soft);
+  --color-ok: var(--ok);
+  --color-ok-soft: var(--ok-soft);
+  --color-bad: var(--bad);
+  --color-bad-soft: var(--bad-soft);
+
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua",
+    Georgia, serif;
+}
+
+html,
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--shell);
+  color: var(--ink);
+  -webkit-text-size-adjust: 100%;
+}
+
+/* Tekstgrootte. Het hele ontwerp rekent in rem, dus tekst én witruimte
+   groeien mee en blijven in verhouding. */
+:root[data-tekst="groter"] {
+  font-size: 118%;
+}
+:root[data-tekst="grootst"] {
+  font-size: 138%;
+}
+
+::selection {
+  background: var(--brand-pale);
+  color: var(--ink);
+}
+
+/* Eén zichtbare focusring voor alles wat je met het toetsenbord kunt bereiken.
+   De standaardring van de browser verdwijnt in donkere modus bijna helemaal. */
+:where(a, button, input, select, textarea, [tabindex]):focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+  border-radius: 8px;
+}
+
+/* Voor wie met het toetsenbord navigeert: sla de tabs over naar de inhoud. */
+.skip-link {
+  position: absolute;
+  left: 0.5rem;
+  top: -100px;
+  z-index: 50;
+  background: var(--brand);
+  color: var(--on-brand);
+  padding: 0.6rem 1rem;
+  border-radius: 10px;
+  font-weight: 600;
+  transition: top 0.15s;
+}
+.skip-link:focus {
+  top: 0.5rem;
+}
+
+@layer components {
+  .eyebrow {
+    font-size: 0.75rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    font-weight: 600;
+  }
+
+  .display {
+    font-family: var(--font-display);
+    font-weight: 400;
+    letter-spacing: -0.015em;
+    line-height: 1.1;
+    color: var(--ink);
+  }
+
+  .panel {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+  }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    border-radius: 10px;
+    font-weight: 600;
+    font-size: 0.9375rem;
+    padding: 0.75rem 1.25rem;
+    border: 1px solid transparent;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s, color 0.15s, transform 0.08s;
+    text-align: center;
+  }
+  .btn:active:not(:disabled) {
+    transform: translateY(1px);
+  }
+  .btn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+  .btn-primary {
+    background: var(--brand);
+    color: var(--on-brand);
+  }
+  .btn-primary:hover:not(:disabled) {
+    background: var(--brand-hover);
+  }
+  .btn-secondary {
+    background: var(--surface);
+    color: var(--brand);
+    border-color: var(--line-strong);
+  }
+  .btn-secondary:hover:not(:disabled) {
+    background: var(--brand-soft);
+  }
+  .btn-ghost {
+    background: transparent;
+    color: var(--ink-soft);
+    border-color: var(--line);
+  }
+  .btn-ghost:hover:not(:disabled) {
+    color: var(--ink);
+    background: var(--surface-2);
+  }
+
+  .field {
+    width: 100%;
+    background: var(--surface);
+    border: 1px solid var(--line-strong);
+    border-radius: 10px;
+    padding: 0.8rem 0.95rem;
+    font-size: 1.0625rem;
+    color: var(--ink);
+    outline: none;
+    transition: border-color 0.15s, box-shadow 0.15s;
+  }
+  .field:focus {
+    border-color: var(--brand-mid);
+    box-shadow: 0 0 0 3px var(--brand-soft);
+  }
+  .field::placeholder {
+    color: var(--ink-faint);
+  }
+
+  .chip {
+    border-radius: 999px;
+    border: 1px solid var(--line-strong);
+    background: var(--surface);
+    color: var(--ink-soft);
+    padding: 0.375rem 0.8rem;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
+  }
+  .chip:hover {
+    border-color: var(--brand-mid);
+    color: var(--ink);
+  }
+  .chip[data-on="true"] {
+    background: var(--brand);
+    border-color: var(--brand);
+    color: var(--on-brand);
+  }
+}
+
+@keyframes az-rise {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.rise {
+  animation: az-rise 0.28s ease-out both;
+}
+
+@keyframes az-shake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-5px);
+  }
+  75% {
+    transform: translateX(5px);
+  }
+}
+.shake {
+  animation: az-shake 0.3s ease-in-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rise,
+  .shake {
+    animation: none;
+  }
 }
