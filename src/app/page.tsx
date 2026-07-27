@@ -93,9 +93,13 @@ export default function Muur() {
       )}
 
       <section className="panel mt-7 p-5">
-        <div className="grid grid-cols-3 gap-3 text-center">
-          <Stat value={due.length} label="te herhalen" />
-          <Stat value={fresh.length} label="nog te leren" />
+        {/* Korte labels van één woord: op een telefoon met de grootste
+            letterstand is een kolom nog geen 125 pixels breed, en dan brak
+            "te herhalen" af tot "te / herhalen". items-start houdt de drie
+            kolommen op één lijn als er tóch eentje omslaat. */}
+        <div className="grid grid-cols-3 items-start gap-3 text-center">
+          <Stat value={due.length} label="herhalen" />
+          <Stat value={fresh.length} label="te leren" />
           <Stat value={progress.answers} label="antwoorden" />
         </div>
         <Link href="/leren" className="btn btn-primary mt-5 w-full">
@@ -156,7 +160,12 @@ export default function Muur() {
       <section className="mt-8">
         <div className="flex items-baseline justify-between gap-3">
           <p className="eyebrow">niveau</p>
-          <Link href="/niveautest" className="text-xs text-brand underline underline-offset-2">
+          {/* py-1 zodat het tikdoel de 24 pixels haalt die WCAG 2.2 vraagt —
+              zonder was deze link 22 hoog en op een telefoon net te klein. */}
+          <Link
+            href="/niveautest"
+            className="py-1 text-xs text-brand underline underline-offset-2"
+          >
             niveautest opnieuw doen
           </Link>
         </div>
@@ -302,7 +311,7 @@ function Stat({ value, label }: { value: number; label: string }) {
   return (
     <div>
       <b className="display block text-3xl">{value}</b>
-      <span className="text-xs text-ink-faint">{label}</span>
+      <span className="block text-xs leading-tight text-ink-faint">{label}</span>
     </div>
   );
 }

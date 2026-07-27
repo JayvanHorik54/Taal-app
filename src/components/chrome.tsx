@@ -27,9 +27,12 @@ export function Header() {
         Naar de inhoud
       </a>
       <div className="mx-auto flex max-w-3xl items-center justify-between gap-3 px-4 py-3 sm:px-5">
-        <Link href="/" className="flex items-center gap-2">
+        <Link href="/" className="flex shrink-0 items-center gap-2">
           <Tile level={3} size={22} />
-          <span className="display text-lg tracking-tight">azulejo</span>
+          {/* Verdwijnt bij de grootste letterstand op een smal scherm — zie
+              de regel in globals.css. */}
+          <span className="woordmerk display text-lg tracking-tight">azulejo</span>
+          <span className="sr-only">naar de muur</span>
         </Link>
         <div className="flex flex-wrap items-center justify-end gap-2 text-xs">
           {sync === "offline" && (
@@ -45,23 +48,43 @@ export function Header() {
           </span>
           <TekstKnop />
           {ready && progress.streak > 0 && (
-            <span className="rounded-md bg-accent-soft px-2 py-1 font-semibold text-accent">
-              {progress.streak} {progress.streak === 1 ? "dag" : "dagen"}
+            <span
+              className="rounded-md bg-accent-soft px-2 py-1 font-semibold text-accent"
+              title={`${progress.streak} ${progress.streak === 1 ? "dag" : "dagen"} op rij`}
+            >
+              {/* Het woord "dagen" alleen als het past: op een smal scherm telt
+                  elke millimeter in deze rij. Een schermlezer krijgt hoe dan ook
+                  de hele zin, dus het zichtbare deel gaat voor hem verborgen —
+                  anders hoor je "2 dagen dagen op rij". */}
+              <span aria-hidden>
+                {progress.streak}
+                <span className="hidden sm:inline">
+                  {" "}
+                  {progress.streak === 1 ? "dag" : "dagen"}
+                </span>
+              </span>
+              <span className="sr-only">
+                {progress.streak} {progress.streak === 1 ? "dag" : "dagen"} op rij
+              </span>
             </span>
           )}
           {account && (
+            // Op een telefoon blijft alleen de rondel over. Met de tekst erbij
+            // wipt deze rij bij de grootste letterstand naar twee regels, en
+            // dan neemt de vaste kop een vijfde van het scherm in beslag.
             <button
               onClick={() => void signOut()}
+              aria-label={`Aangemeld als ${account.naam} — afmelden`}
               title={`Aangemeld als ${account.naam} — klik om af te melden`}
-              className="flex items-center gap-1.5 rounded-md border border-line-strong bg-surface px-2 py-1 font-semibold text-ink-soft transition-colors hover:border-brand-mid hover:text-ink"
+              className="flex items-center gap-1.5 rounded-md border border-line-strong bg-surface px-1.5 py-1 font-semibold text-ink-soft transition-colors hover:border-brand-mid hover:text-ink sm:px-2"
             >
               <span
                 aria-hidden
-                className="flex size-4 items-center justify-center rounded-full bg-brand text-[10px] text-on-brand"
+                className="flex size-5 items-center justify-center rounded-full bg-brand text-[11px] text-on-brand"
               >
                 {account.naam.slice(0, 1).toUpperCase()}
               </span>
-              <span className="max-w-20 truncate">{account.naam}</span>
+              <span className="hidden max-w-20 truncate sm:inline">{account.naam}</span>
             </button>
           )}
         </div>

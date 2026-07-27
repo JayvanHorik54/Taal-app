@@ -109,6 +109,16 @@ body {
   font-size: 138%;
 }
 
+/* Bij de grootste stand op een smalle telefoon past het woordmerk niet meer
+   naast de badges, en dan wipt die rij om en beslaat de vaste kop een vijfde
+   van het scherm. De tegel ernaast blijft staan en is nog steeds de weg terug
+   naar de muur; schermlezers houden de naam via een sr-only tekst. */
+@media (max-width: 30rem) {
+  :root[data-tekst="grootst"] .woordmerk {
+    display: none;
+  }
+}
+
 ::selection {
   background: var(--brand-pale);
   color: var(--ink);
