@@ -1,10 +1,23 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { spreeksnelheid } from "./tempo";
+import { useStore } from "./store";
 
 /* ── uitspraak laten horen ──────────────────────────────── */
 
+/** "trager" is de knop langzamer: een stap onder wat jouw niveau normaal krijgt. */
+export type Tempo = "normaal" | "trager";
+
+/**
+ * De snelheid komt uit het niveau van de leerling (zie `tempo.ts`) en wordt
+ * hier opgehaald in plaats van meegegeven. Dat is bewust: er wordt op elf
+ * plekken voorgelezen, en één vergeten aanroep zou betekenen dat een beginner
+ * op dat ene scherm alsnog een woordenbrij hoort.
+ */
 export function useVoice(lang: string) {
+  const { progress } = useStore();
+  const niveau = progress.level;
   const [voice, setVoice] = useState<SpeechSynthesisVoice | null>(null);
 
   useEffect(() => {
@@ -26,17 +39,17 @@ export function useVoice(lang: string) {
   }, [lang]);
 
   return useCallback(
-    (text: string, rate = 0.9) => {
+    (text: string, tempo: Tempo = "normaal") => {
       const synth = window.speechSynthesis;
       if (!synth || !text) return;
       synth.cancel();
       const utterance = new SpeechSynthesisUtterance(text);
       utterance.lang = lang;
       if (voice) utterance.voice = voice;
-      utterance.rate = rate;
+      utterance.rate = spreeksnelheid(niveau, tempo === "trager");
       synth.speak(utterance);
     },
-    [lang, voice]
+    [lang, voice, niveau]
   );
 }
 

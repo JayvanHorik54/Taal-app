@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { GrammarExercise } from "@/content/types";
 import { judge, type Verdict } from "@/lib/answer";
-import { useListening } from "@/lib/speech";
+import { useListening, type Tempo } from "@/lib/speech";
 import type { StudyCard } from "@/lib/progress";
 
 export type VocabKind = "recognize" | "recall" | "listen" | "cloze" | "speak";
@@ -218,7 +218,7 @@ export function VocabExercise({
   speechLang: string;
   specialChars: string[];
   articles: string[];
-  speak: (text: string, rate?: number) => void;
+  speak: (text: string, tempo?: Tempo) => void;
   onDone: (outcome: Outcome) => void;
 }) {
   const [typed, setTyped] = useState("");
@@ -331,7 +331,7 @@ export function VocabExercise({
             </button>
             <button
               type="button"
-              onClick={() => speak(term, 0.6)}
+              onClick={() => speak(term, "trager")}
               className="mt-2 w-full text-center text-xs text-ink-faint hover:text-ink-soft"
             >
               langzamer
