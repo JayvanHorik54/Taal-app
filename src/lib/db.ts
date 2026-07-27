@@ -76,14 +76,19 @@ export function zetVerbindingVoorTest(uitvoerder: SqlUitvoerder | null) {
 /** De database is niet ingesteld — anders dan een query die stukloopt. */
 export class GeenDatabase extends Error {}
 
+/**
+ * Waar je een ontbrekende variabele moet zetten verschilt per plek: lokaal in
+ * `.env.local`, online bij je hostingpartij. Verkeerd advies kost hier zomaar
+ * een half uur zoeken, dus dat onderscheid maken we.
+ */
+export const zetHem = (naam: string) =>
+  process.env.NODE_ENV === "production"
+    ? `Zet ${naam} in de omgevingsvariabelen van het project en rol daarna opnieuw uit — ` +
+      "een bestaande uitrol pikt een nieuwe variabele niet vanzelf op."
+    : `Zet ${naam} in .env.local en start de server opnieuw.`;
+
 export const GEEN_DATABASE_ANTWOORD = () =>
-  Response.json(
-    {
-      error:
-        "Geen database ingesteld. Zet DATABASE_URL in .env.local en start de server opnieuw.",
-    },
-    { status: 503 }
-  );
+  Response.json({ error: `Geen database ingesteld. ${zetHem("DATABASE_URL")}` }, { status: 503 });
 
 /**
  * Het schema zet zichzelf klaar bij de eerste query na een koude start.

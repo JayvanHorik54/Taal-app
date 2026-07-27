@@ -27,7 +27,8 @@ export const GEEN_GEHEIM_ANTWOORD = () =>
     {
       error:
         "SESSION_SECRET is niet ingesteld op de server, dus aanmelden kan niet veilig. " +
-        "Zet hem in de omgevingsvariabelen en rol opnieuw uit.",
+        "Zet hem in de omgevingsvariabelen van het project en rol daarna opnieuw uit — " +
+        "een bestaande uitrol pikt een nieuwe variabele niet vanzelf op.",
     },
     { status: 503 }
   );
