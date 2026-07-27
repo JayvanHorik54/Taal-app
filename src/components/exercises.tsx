@@ -2,11 +2,11 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { GrammarExercise } from "@/content/types";
-import { judge, type Verdict } from "@/lib/answer";
+import { judge, normalize, type Verdict } from "@/lib/answer";
 import { useListening, type Tempo } from "@/lib/speech";
+import { shuffle } from "@/lib/willekeur";
+import { TYPEVORMEN, blankOut, type VocabKind } from "@/lib/vraagvorm";
 import type { StudyCard } from "@/lib/progress";
-
-export type VocabKind = "recognize" | "recall" | "listen" | "cloze" | "speak";
 
 export type Outcome = { correct: boolean; note?: string };
 
@@ -171,36 +171,147 @@ export function Feedback({
   );
 }
 
-/* ── woordvraag ─────────────────────────────────────────── */
-
-export function blankOut(sentence: string, term: string): string | null {
-  const core = term.split(" ").slice(-1)[0];
-  const pattern = new RegExp(`(^|[^\\p{L}])(${escapeRegExp(core)})([^\\p{L}]|$)`, "iu");
-  if (!pattern.test(sentence)) return null;
-  return sentence.replace(pattern, (_m, before, _word, after) => `${before}_____${after}`);
-}
-
-function escapeRegExp(value: string) {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+/**
+ * Vier antwoorden om uit te kiezen. Na je keuze blijft het juiste antwoord
+ * groen staan — ook als je het fout had. Zien wat het wél was, direct naast
+ * wat je koos, is waar je van leert.
+ */
+export function Keuzes({
+  opties,
+  antwoord,
+  gekozen,
+  beslist,
+  lang,
+  onKies,
+}: {
+  opties: string[];
+  antwoord: string;
+  gekozen: string | null;
+  beslist: boolean;
+  lang?: string;
+  onKies: (keuze: string) => void;
+}) {
+  return (
+    <div className="grid gap-2">
+      {opties.map((optie) => {
+        const isAntwoord = optie === antwoord;
+        const isGekozen = beslist && optie === gekozen;
+        return (
+          <button
+            key={optie}
+            lang={lang}
+            disabled={beslist}
+            onClick={() => onKies(optie)}
+            className={`rounded-xl border px-4 py-3 text-left text-[15px] transition-colors ${
+              !beslist
+                ? "border-line-strong bg-surface hover:border-brand-mid hover:bg-brand-soft"
+                : isAntwoord
+                  ? "border-ok bg-ok-soft"
+                  : isGekozen
+                    ? "border-bad bg-bad-soft"
+                    : "border-line bg-surface opacity-60"
+            }`}
+          >
+            {optie}
+          </button>
+        );
+      })}
+    </div>
+  );
 }
 
 /**
- * Welke vraagvorm past bij dit woord op dit moment? Hoe beter je een woord
- * kent, hoe meer er van je gevraagd wordt: eerst herkennen, dan schrijven,
- * dan verstaan, en uiteindelijk uitspreken.
+ * De zin bouwen uit losse woorden.
+ *
+ * Dit is de enige vraagvorm die naar woordvolgorde kijkt, en de enige die de
+ * Nederlandse voorbeeldzin gebruikt — die stond tot nu toe in de content
+ * zonder dat er ooit een vraag over ging.
+ *
+ * Aantikken in plaats van typen is hier bewust: een hele zin uitschrijven
+ * struikelt over één accent of komma, terwijl het je om de volgorde te doen
+ * is. Zo blijft het ook op een telefoon te doen.
  */
-export function pickKind(card: StudyCard): VocabKind {
-  const { reps } = card.schedule;
-  const hasSentence = Boolean(
-    card.word.exampleTarget && blankOut(card.word.exampleTarget, card.word.term)
+function ZinBouwen({
+  zin,
+  vertaling,
+  lang,
+  beslist,
+  onKlaar,
+}: {
+  zin: string;
+  vertaling: string;
+  lang: string;
+  beslist: boolean;
+  onKlaar: (gebouwd: string) => void;
+}) {
+  const woorden = useMemo(() => zin.trim().split(/\s+/).filter(Boolean), [zin]);
+  // Husselen op index, niet op woord: een zin mag hetzelfde woord twee keer
+  // bevatten, en dan moeten het twee losse knopjes blijven.
+  const volgorde = useMemo(() => shuffle(woorden.map((_, i) => i)), [woorden]);
+  const [gelegd, setGelegd] = useState<number[]>([]);
+
+  const over = volgorde.filter((i) => !gelegd.includes(i));
+  const gebouwd = gelegd.map((i) => woorden[i]).join(" ");
+  const compleet = gelegd.length === woorden.length;
+
+  return (
+    <div className="space-y-4">
+      <Prompt label="maak hier de zin van">
+        <p className="display text-2xl leading-snug">{vertaling}</p>
+      </Prompt>
+
+      {/* De regel waar de zin ontstaat. Hij houdt zijn hoogte ook als hij leeg
+          is, zodat de knoppen eronder niet verspringen bij het eerste woord. */}
+      <div
+        className="flex min-h-16 flex-wrap content-start gap-2 rounded-xl border border-line-strong bg-surface-2 p-3"
+        aria-label="jouw zin"
+      >
+        {gelegd.length === 0 && (
+          <span className="self-center text-sm text-ink-faint">
+            Tik de woorden aan in de goede volgorde
+          </span>
+        )}
+        {gelegd.map((i, plek) => (
+          <button
+            key={`${i}-${plek}`}
+            lang={lang}
+            disabled={beslist}
+            onClick={() => setGelegd(gelegd.filter((_, p) => p !== plek))}
+            className="rounded-lg border border-brand-mid bg-brand-soft px-3 py-1.5 text-[15px] transition-colors hover:border-brand disabled:opacity-70"
+          >
+            {woorden[i]}
+          </button>
+        ))}
+      </div>
+
+      <div className="flex flex-wrap gap-2">
+        {over.map((i) => (
+          <button
+            key={i}
+            lang={lang}
+            disabled={beslist}
+            onClick={() => setGelegd([...gelegd, i])}
+            className="rounded-lg border border-line-strong bg-surface px-3 py-1.5 text-[15px] transition-colors hover:border-brand-mid hover:bg-brand-soft"
+          >
+            {woorden[i]}
+          </button>
+        ))}
+      </div>
+
+      {!beslist && (
+        <button
+          className="btn btn-primary w-full"
+          disabled={!compleet}
+          onClick={() => onKlaar(gebouwd)}
+        >
+          Nakijken
+        </button>
+      )}
+    </div>
   );
-  const options: VocabKind[] = ["recall"];
-  if (reps <= 1) options.push("recognize");
-  if (reps >= 2) options.push("listen");
-  if (reps >= 2 && hasSentence) options.push("cloze");
-  if (reps >= 3) options.push("speak");
-  return options[Math.floor(Math.random() * options.length)];
 }
+
+/* ── woordvraag ─────────────────────────────────────────── */
 
 export function VocabExercise({
   card,
@@ -214,7 +325,8 @@ export function VocabExercise({
 }: {
   card: StudyCard;
   kind: VocabKind;
-  distractors: string[];
+  /** Foute opties: betekenissen voor de ene keuzevorm, doelwoorden voor de andere. */
+  distractors: { betekenissen: string[]; woorden: string[] };
   speechLang: string;
   specialChars: string[];
   articles: string[];
@@ -232,10 +344,16 @@ export function VocabExercise({
 
   const { term, translation, exampleTarget, exampleNative } = card.word;
 
+  /** Bij welke vormen kies je een betekenis, en bij welke een doelwoord? */
+  const kiestBetekenis = kind === "recognize" || kind === "listen-choice";
+  const kiestWoord = kind === "produce-choice";
+
   const choices = useMemo(() => {
-    if (kind !== "recognize") return [];
-    return [translation, ...distractors.slice(0, 3)].sort(() => Math.random() - 0.5);
-  }, [kind, translation, distractors]);
+    const antwoord = kiestWoord ? term : translation;
+    const fout = kiestWoord ? distractors.woorden : distractors.betekenissen;
+    if (!kiestBetekenis && !kiestWoord) return [];
+    return shuffle([antwoord, ...fout.slice(0, 3)]);
+  }, [kiestBetekenis, kiestWoord, term, translation, distractors]);
 
   const cloze = useMemo(
     () => (exampleTarget ? blankOut(exampleTarget, term) : null),
@@ -244,7 +362,7 @@ export function VocabExercise({
 
   // Bij luisteren begint de vraag met geluid, niet met tekst.
   useEffect(() => {
-    if (kind === "listen" && !spokenOnce.current) {
+    if ((kind === "listen" || kind === "listen-choice") && !spokenOnce.current) {
       spokenOnce.current = true;
       const timer = setTimeout(() => speak(term), 250);
       return () => clearTimeout(timer);
@@ -257,7 +375,14 @@ export function VocabExercise({
     if (!next.correct) speak(term);
   }
 
-  const expected = kind === "recognize" ? translation : term;
+  // Waar de feedback naar wijst verschilt per vorm: bij de zinbouwer is het
+  // juiste antwoord de hele zin, niet het losse woord.
+  const expected =
+    kind === "build" && exampleTarget
+      ? exampleTarget
+      : kiestBetekenis
+        ? translation
+        : term;
 
   const finish = () => onDone({ correct: verdict!.correct, note: verdict?.note });
 
@@ -271,34 +396,84 @@ export function VocabExercise({
               <SpeakButton onClick={() => speak(term)} />
             </div>
           </Prompt>
-          <div className="grid gap-2">
-            {choices.map((choice) => {
-              const chosen = verdict !== null && choice === typed;
-              const isAnswer = choice === translation;
-              return (
-                <button
-                  key={choice}
-                  disabled={verdict !== null}
-                  onClick={() => {
-                    setTyped(choice);
-                    settle({ correct: choice === translation });
-                  }}
-                  className={`rounded-xl border px-4 py-3 text-left text-[15px] transition-colors ${
-                    verdict === null
-                      ? "border-line-strong bg-surface hover:border-brand-mid hover:bg-brand-soft"
-                      : isAnswer
-                        ? "border-ok bg-ok-soft"
-                        : chosen
-                          ? "border-bad bg-bad-soft"
-                          : "border-line bg-surface opacity-60"
-                  }`}
-                >
-                  {choice}
-                </button>
-              );
-            })}
-          </div>
+          <Keuzes
+            opties={choices}
+            antwoord={translation}
+            gekozen={typed || null}
+            beslist={verdict !== null}
+            onKies={(keuze) => {
+              setTyped(keuze);
+              settle({ correct: keuze === translation });
+            }}
+          />
         </>
+      )}
+
+      {kind === "produce-choice" && (
+        <>
+          {/* Ander opschrift dan bij "recall", dat dezelfde vraag stelt maar je
+              laat typen. Zo weet je aan de kop al of je kiest of zelf schrijft. */}
+          <Prompt label="welk woord hoort hierbij?">
+            <span className="display text-3xl">{translation}</span>
+          </Prompt>
+          <Keuzes
+            opties={choices}
+            antwoord={term}
+            gekozen={typed || null}
+            beslist={verdict !== null}
+            lang={speechLang}
+            onKies={(keuze) => {
+              setTyped(keuze);
+              settle({ correct: keuze === term });
+            }}
+          />
+        </>
+      )}
+
+      {kind === "listen-choice" && (
+        <>
+          <Prompt label="wat hoor je?">
+            <button
+              type="button"
+              onClick={() => speak(term)}
+              className="flex w-full items-center justify-center gap-3 rounded-xl border border-line-strong bg-surface py-8 text-brand transition-colors hover:bg-brand-soft"
+            >
+              <span className="text-2xl">♪</span>
+              <span className="text-sm font-semibold">Nog eens afspelen</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => speak(term, "trager")}
+              className="mt-2 w-full text-center text-xs text-ink-faint hover:text-ink-soft"
+            >
+              langzamer
+            </button>
+          </Prompt>
+          <Keuzes
+            opties={choices}
+            antwoord={translation}
+            gekozen={typed || null}
+            beslist={verdict !== null}
+            onKies={(keuze) => {
+              setTyped(keuze);
+              settle({ correct: keuze === translation });
+            }}
+          />
+        </>
+      )}
+
+      {kind === "build" && exampleTarget && exampleNative && (
+        <ZinBouwen
+          zin={exampleTarget}
+          vertaling={exampleNative}
+          lang={speechLang}
+          beslist={verdict !== null}
+          onKlaar={(gebouwd) => {
+            const goed = normalize(gebouwd) === normalize(exampleTarget);
+            setTyped(gebouwd);
+            settle({ correct: goed });
+          }}
+        />
       )}
 
       {kind === "recall" && (
@@ -419,7 +594,9 @@ export function VocabExercise({
         </>
       )}
 
-      {verdict === null && kind !== "recognize" && kind !== "speak" && (
+      {/* De keuzevormen kijken meteen na bij het aanklikken, de zinbouwer heeft
+          zijn eigen knop, en bij spreken doet de microfoon het werk. */}
+      {verdict === null && TYPEVORMEN.includes(kind) && (
         <button
           className="btn btn-primary w-full"
           disabled={!typed.trim()}
@@ -448,6 +625,136 @@ export function VocabExercise({
             }
           />
           <button className="btn btn-primary w-full" onClick={finish} autoFocus>
+            Verder
+          </button>
+        </>
+      )}
+    </div>
+  );
+}
+
+/* ── woordparen koppelen ────────────────────────────────── */
+
+export type KoppelUitslag = { cardId: string; correct: boolean };
+
+/**
+ * Vijf woorden, vijf vertalingen, door elkaar. Koppel ze.
+ *
+ * Een heel ander ritme dan vraag-antwoord: je ziet alles tegelijk, je mag
+ * beginnen bij wat je zeker weet, en de rest leid je af. Dat afleiden is
+ * precies waarom het blijft hangen — en het is de enige oefening waarin
+ * woorden náást elkaar staan, zodat je verschillen ziet die je bij één woord
+ * per scherm mist.
+ *
+ * Fout gekoppeld telt voor dát woord als fout, ook als je het daarna alsnog
+ * goed legt. Anders is het gokken tot het klopt.
+ */
+export function KoppelOefening({
+  cards,
+  speechLang,
+  speak,
+  onDone,
+}: {
+  cards: StudyCard[];
+  speechLang: string;
+  speak: (text: string, tempo?: Tempo) => void;
+  onDone: (uitslagen: KoppelUitslag[]) => void;
+}) {
+  const vertalingen = useMemo(() => shuffle(cards), [cards]);
+
+  const [gekozen, setGekozen] = useState<string | null>(null);
+  const [gelegd, setGelegd] = useState<Set<string>>(new Set());
+  const [mis, setMis] = useState<Set<string>>(new Set());
+  // Kort oplichten na een misser, zodat je ziet wat er niet bij elkaar hoort.
+  const [botsing, setBotsing] = useState<string | null>(null);
+
+  const klaar = gelegd.size === cards.length;
+
+  const kiesWoord = (id: string) => {
+    if (gelegd.has(id)) return;
+    setGekozen(gekozen === id ? null : id);
+    setBotsing(null);
+  };
+
+  const kiesVertaling = (id: string) => {
+    if (gelegd.has(id) || !gekozen) return;
+    if (id === gekozen) {
+      setGelegd(new Set(gelegd).add(id));
+      setGekozen(null);
+      const kaart = cards.find((c) => c.id === id);
+      if (kaart) speak(kaart.word.term);
+      return;
+    }
+    // Mis: allebei de kanten onthouden als fout, want je wist geen van beide.
+    setMis(new Set(mis).add(gekozen).add(id));
+    setBotsing(id);
+    setGekozen(null);
+    setTimeout(() => setBotsing(null), 600);
+  };
+
+  const knop = (actief: boolean, af: boolean, rood: boolean) =>
+    `rounded-xl border px-3 py-3 text-left text-[15px] transition-colors ${
+      af
+        ? "border-ok bg-ok-soft text-ok"
+        : rood
+          ? "border-bad bg-bad-soft"
+          : actief
+            ? "border-brand bg-brand-soft"
+            : "border-line-strong bg-surface hover:border-brand-mid hover:bg-brand-soft"
+    }`;
+
+  return (
+    <div className="space-y-5">
+      <Prompt label="koppel de woorden">
+        <p className="text-sm text-ink-soft">
+          Tik links een woord aan en daarna rechts de betekenis die erbij hoort.
+        </p>
+      </Prompt>
+
+      <div className="grid grid-cols-2 gap-2">
+        <div className="grid content-start gap-2">
+          {cards.map((card) => (
+            <button
+              key={card.id}
+              lang={speechLang}
+              disabled={gelegd.has(card.id)}
+              onClick={() => kiesWoord(card.id)}
+              className={knop(gekozen === card.id, gelegd.has(card.id), false)}
+            >
+              {card.word.term}
+            </button>
+          ))}
+        </div>
+        <div className="grid content-start gap-2">
+          {vertalingen.map((card) => (
+            <button
+              key={card.id}
+              disabled={gelegd.has(card.id)}
+              onClick={() => kiesVertaling(card.id)}
+              className={knop(false, gelegd.has(card.id), botsing === card.id)}
+            >
+              {card.word.translation}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {klaar && (
+        <>
+          <div role="status" className="rise rounded-xl bg-ok-soft p-4 text-sm text-ok">
+            <p className="font-semibold">
+              {mis.size === 0
+                ? "Alles in één keer goed"
+                : `Klaar — ${cards.length - mis.size} van de ${cards.length} in één keer goed`}
+            </p>
+          </div>
+          <button
+            className="btn btn-primary w-full"
+            autoFocus
+            onClick={() =>
+              onDone(cards.map((card) => ({ cardId: card.id, correct: !mis.has(card.id) })))
+            }
+          >
             Verder
           </button>
         </>

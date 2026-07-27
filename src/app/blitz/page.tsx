@@ -22,8 +22,8 @@ type Question = {
 };
 
 export default function BlitzPage() {
-  const { ready } = useStore();
-  if (!ready) return <Loading />;
+  const { ready, synced } = useStore();
+  if (!ready || !synced) return <Loading />;
   return <Round />;
 }
 

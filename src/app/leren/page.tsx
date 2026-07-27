@@ -6,21 +6,30 @@ import { Suspense, useMemo, useState } from "react";
 import { Loading, Page, ProgressBar, TaskBar } from "@/components/chrome";
 import { Tile } from "@/components/tiles";
 import {
+  KoppelOefening,
   Prompt,
   SpeakButton,
   VocabExercise,
-  pickKind,
   type Outcome,
-  type VocabKind,
 } from "@/components/exercises";
+import { pickKind, type VocabKind } from "@/lib/vraagvorm";
 import { buildCards, bumpStreak, sessionQueue, type StudyCard } from "@/lib/progress";
 import { mastery, review, type Grade } from "@/lib/srs";
 import { useVoice } from "@/lib/speech";
 import { useStore } from "@/lib/store";
+import { shuffle } from "@/lib/willekeur";
 
 const SESSION_SIZE = 12;
 
-type Step = { card: StudyCard; kind: VocabKind | "intro" };
+/** Zoveel woorden tegelijk in een koppelronde. */
+const KOPPEL_AANTAL = 5;
+/** Na hoeveel vragen de koppelronde ertussen komt. */
+const KOPPEL_NA = 4;
+
+type Step =
+  | { kind: "intro"; card: StudyCard }
+  | { kind: VocabKind; card: StudyCard }
+  | { kind: "koppel"; cards: StudyCard[] };
 
 export default function LerenPage() {
   return (
@@ -31,13 +40,15 @@ export default function LerenPage() {
 }
 
 /**
- * De sessie mag pas opgebouwd worden als de voortgang uit localStorage is
- * gelezen — anders stelt hij zijn rij samen op een lege muur.
+ * De sessie mag pas opgebouwd worden als de voortgang binnen is — niet alleen
+ * de kopie uit localStorage, maar ook het antwoord van de server. Op een nieuw
+ * apparaat is die kopie leeg terwijl er wel voortgang bestaat, en dan zou de
+ * sessie zeggen dat er niets te doen is.
  */
 function Gate() {
-  const { ready } = useStore();
+  const { ready, synced } = useStore();
   const deckId = useSearchParams().get("deck") ?? undefined;
-  if (!ready) return <Loading />;
+  if (!ready || !synced) return <Loading />;
   return <Session deckId={deckId} />;
 }
 
@@ -50,14 +61,7 @@ function Session({ deckId }: { deckId?: string }) {
 
   // De rij wordt één keer samengesteld: hij mag niet verspringen terwijl je bezig bent.
   const [steps] = useState<Step[]>(() =>
-    sessionQueue(buildCards(pack, progress), SESSION_SIZE, deckId).flatMap<Step>((card) =>
-      card.schedule.reps === 0
-        ? [
-            { card, kind: "intro" },
-            { card, kind: "recognize" },
-          ]
-        : [{ card, kind: pickKind(card) }]
-    )
+    bouwSessie(sessionQueue(buildCards(pack, progress), SESSION_SIZE, deckId))
   );
 
   const [index, setIndex] = useState(0);
@@ -94,6 +98,35 @@ function Session({ deckId }: { deckId?: string }) {
         ? { ...current, good: current.good + 1 }
         : { ...current, bad: current.bad + 1 }
     );
+    advance();
+  };
+
+  /**
+   * Een koppelronde levert vijf uitslagen tegelijk. Die gaan in één keer de
+   * voortgang in: vijf losse `update`-aanroepen zouden elk op de vorige stand
+   * werken en elkaar overschrijven.
+   */
+  const gradeKoppel = (uitslagen: { cardId: string; correct: boolean }[]) => {
+    const opId = new Map(
+      steps.flatMap((item) => ("cards" in item ? item.cards : "card" in item ? [item.card] : []))
+        .map((card) => [card.id, card])
+    );
+
+    update((current) => {
+      const bumped = bumpStreak(current);
+      const cards = { ...bumped.cards };
+      for (const { cardId, correct } of uitslagen) {
+        const card = opId.get(cardId);
+        if (card) cards[cardId] = review(card.schedule, correct ? 1 : 0);
+      }
+      return { ...bumped, answers: bumped.answers + uitslagen.length, cards };
+    });
+
+    const goed = uitslagen.filter((u) => u.correct).length;
+    setTally((current) => ({
+      good: current.good + goed,
+      bad: current.bad + (uitslagen.length - goed),
+    }));
     advance();
   };
 
@@ -170,6 +203,15 @@ function Session({ deckId }: { deckId?: string }) {
             Onthouden
           </button>
         </div>
+      ) : step.kind === "koppel" ? (
+        <div key={`koppel-${index}`} className="rise">
+          <KoppelOefening
+            cards={step.cards}
+            speechLang={pack.speechLang}
+            speak={speak}
+            onDone={gradeKoppel}
+          />
+        </div>
       ) : (
         <div key={`vraag-${index}`} className="rise">
           <VocabExercise
@@ -185,35 +227,83 @@ function Session({ deckId }: { deckId?: string }) {
         </div>
       )}
 
-      <div className="mt-8 flex items-center gap-2 text-xs text-ink-faint">
-        <Tile level={mastery(step.card.schedule)} size={16} />
-        {step.card.deckTitle}
-      </div>
+      {"card" in step && (
+        <div className="mt-8 flex items-center gap-2 text-xs text-ink-faint">
+          <Tile level={mastery(step.card.schedule)} size={16} />
+          {step.card.deckTitle}
+        </div>
+      )}
     </Page>
   );
 }
 
-/** Foute antwoordopties: liefst uit dezelfde lijst, dan pas van elders. */
-function distractorsFor(card: StudyCard, all: StudyCard[]): string[] {
+/**
+ * De vragenrij samenstellen.
+ *
+ * Nieuwe woorden krijgen eerst een introkaartje en daarna een makkelijke
+ * vraag. Voor de rest kiest `pickKind` een vorm, en die krijgt de vorige mee
+ * zodat je niet drie keer achter elkaar hetzelfde krijgt.
+ *
+ * Halverwege komt er een koppelronde tussendoor, met woorden die je in deze
+ * sessie al bent tegengekomen. Dat is bewust: koppelen werkt als je de woorden
+ * net gezien hebt, en het breekt de rij vraag-antwoord-vraag-antwoord open.
+ */
+function bouwSessie(kaarten: StudyCard[]): Step[] {
+  const steps: Step[] = [];
+  let vorige: VocabKind | undefined;
+
+  for (const card of kaarten) {
+    if (card.schedule.reps === 0) {
+      steps.push({ kind: "intro", card }, { kind: "recognize", card });
+      vorige = "recognize";
+      continue;
+    }
+    const kind = pickKind(card, vorige);
+    steps.push({ kind, card });
+    vorige = kind;
+  }
+
+  // Alleen als er genoeg woorden zijn om echt te koppelen; met drie is het
+  // laatste paar geen keuze meer maar wat er overblijft.
+  if (kaarten.length >= KOPPEL_AANTAL) {
+    const plek = Math.min(KOPPEL_NA, steps.length);
+    const eerder = steps.slice(0, plek).map((step) => ("card" in step ? step.card : null));
+    const gezien = [...new Map(eerder.filter(Boolean).map((c) => [c!.id, c!])).values()];
+    const aanvulling = kaarten.filter((card) => !gezien.some((c) => c.id === card.id));
+    const mee = [...gezien, ...aanvulling].slice(0, KOPPEL_AANTAL);
+    if (mee.length === KOPPEL_AANTAL) {
+      steps.splice(plek, 0, { kind: "koppel", cards: shuffle(mee) });
+    }
+  }
+
+  return steps;
+}
+
+/**
+ * Foute antwoordopties, liefst uit dezelfde lijst en anders van elders —
+ * woorden uit hetzelfde thema lijken meer op elkaar, en dan is kiezen echt
+ * kiezen in plaats van de vreemde eend aanwijzen.
+ */
+function distractorsFor(card: StudyCard, all: StudyCard[]) {
   const sameDeck = all.filter((other) => other.deckId === card.deckId && other.id !== card.id);
   const rest = all.filter((other) => other.deckId !== card.deckId);
   const pool = [...shuffle(sameDeck), ...shuffle(rest)];
-  const seen = new Set([card.word.translation]);
-  const picked: string[] = [];
-  for (const other of pool) {
-    if (picked.length >= 3) break;
-    if (seen.has(other.word.translation)) continue;
-    seen.add(other.word.translation);
-    picked.push(other.word.translation);
-  }
-  return picked;
-}
 
-function shuffle<T>(items: T[]): T[] {
-  const copy = [...items];
-  for (let i = copy.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [copy[i], copy[j]] = [copy[j], copy[i]];
-  }
-  return copy;
+  const kies = (veld: (card: StudyCard) => string) => {
+    const gezien = new Set([veld(card)]);
+    const uit: string[] = [];
+    for (const other of pool) {
+      if (uit.length >= 3) break;
+      const waarde = veld(other);
+      if (gezien.has(waarde)) continue;
+      gezien.add(waarde);
+      uit.push(waarde);
+    }
+    return uit;
+  };
+
+  return {
+    betekenissen: kies((c) => c.word.translation),
+    woorden: kies((c) => c.word.term),
+  };
 }

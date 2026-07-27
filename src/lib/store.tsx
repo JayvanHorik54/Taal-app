@@ -34,6 +34,16 @@ type Stand = {
   voortgang: Progress;
   /** False tijdens serverweergave en hydratie — toon dan nog geen cijfers. */
   klaar: boolean;
+  /**
+   * False tot de server één keer geantwoord heeft (of onbereikbaar bleek).
+   *
+   * `klaar` zegt alleen dat de plaatselijke kopie gelezen is, en die kan leeg
+   * zijn terwijl er op de server een half jaar voortgang staat — precies wat er
+   * gebeurt op een nieuw apparaat. Schermen die hun werk in één keer opbouwen,
+   * zoals de oefensessie, moeten hierop wachten. Anders stellen ze hun rij
+   * samen uit een lege muur en zeggen ze dat er niets te doen is.
+   */
+  gesynct: boolean;
   sync: Sync;
 };
 
@@ -42,6 +52,7 @@ const LEGE_STAND: Stand = {
   taal: null,
   voortgang: SERVER_PROGRESS,
   klaar: false,
+  gesynct: false,
   sync: "rustig",
 };
 
@@ -164,18 +175,20 @@ export function spoelDirect() {
  */
 async function haalOp(account: Account, taal: string) {
   const kopie = leesKopie(account.id, taal);
-  zet({ voortgang: kopie, sync: "bezig" });
+  zet({ voortgang: kopie, sync: "bezig", gesynct: false });
 
   try {
     const { voortgang: vanServer } = await api.haalVoortgang(taal);
     const samen = voegSamen(vanServer, kopie);
     schrijfKopie(account.id, samen);
-    zet({ voortgang: samen, sync: "rustig" });
+    zet({ voortgang: samen, sync: "rustig", gesynct: true });
 
     // Stond er plaatselijk iets wat de server nog niet had, dan gaat dat nu mee.
     if (JSON.stringify(samen) !== JSON.stringify(vanServer)) await duwNaarServer();
   } catch {
-    zet({ sync: "offline" });
+    // Onbereikbaar telt ook als afgehandeld: met de kopie kun je verder, en
+    // eindeloos blijven wachten zou de app in de metro onbruikbaar maken.
+    zet({ sync: "offline", gesynct: true });
   }
 }
 
@@ -191,7 +204,7 @@ export function kiesTaal(code: string) {
     // Niet kunnen bewaren is vervelend, maar deze sessie werkt gewoon door.
   }
 
-  zet({ taal: code, voortgang: leesKopie(account.id, code) });
+  zet({ taal: code, voortgang: leesKopie(account.id, code), gesynct: false });
   void haalOp(account, code);
 }
 
@@ -240,6 +253,8 @@ export function neemAccount(account: Account) {
     taal,
     voortgang: taal ? leesKopie(account.id, taal) : SERVER_PROGRESS,
     klaar: true,
+    // Zonder taal valt er niets op te halen, dus dan is er ook niets om op te wachten.
+    gesynct: !taal,
   });
   if (taal) void haalOp(account, taal);
 }
@@ -252,7 +267,13 @@ export async function meldAf() {
     // Ook als de server onbereikbaar is: op dit apparaat ben je hoe dan ook weg.
   }
   api.bewaarAccount(null);
-  zet({ account: null, taal: null, voortgang: SERVER_PROGRESS, sync: "rustig" });
+  zet({
+    account: null,
+    taal: null,
+    voortgang: SERVER_PROGRESS,
+    sync: "rustig",
+    gesynct: true,
+  });
 }
 
 /**
@@ -269,9 +290,10 @@ async function start() {
       taal,
       voortgang: taal ? leesKopie(bewaard.id, taal) : SERVER_PROGRESS,
       klaar: true,
+      gesynct: !taal,
     });
   } else {
-    zet({ klaar: true });
+    zet({ klaar: true, gesynct: true });
   }
 
   try {
@@ -280,7 +302,7 @@ async function start() {
       if (bewaard) {
         // De sessie is verlopen of het profiel bestaat niet meer.
         api.bewaarAccount(null);
-        zet({ account: null, taal: null, voortgang: SERVER_PROGRESS });
+        zet({ account: null, taal: null, voortgang: SERVER_PROGRESS, gesynct: true });
       }
       return;
     }
@@ -288,7 +310,7 @@ async function start() {
     else if (stand.taal) void haalOp(profiel, stand.taal);
   } catch {
     // Geen verbinding: doorwerken met wat er plaatselijk staat.
-    zet({ sync: bewaard ? "offline" : "rustig" });
+    zet({ sync: bewaard ? "offline" : "rustig", gesynct: true });
   }
 }
 
@@ -299,6 +321,12 @@ let gestart = false;
 type Store = {
   /** False tijdens serverweergave en hydratie — toon dan nog geen cijfers. */
   ready: boolean;
+  /**
+   * False tot de server één keer geantwoord heeft. Schermen die hun werk in
+   * één keer opbouwen — de oefensessie, de toets, het examen — moeten hierop
+   * wachten in plaats van op `ready`, anders bouwen ze op een lege muur.
+   */
+  synced: boolean;
   account: Account | null;
   /** Null zolang er nog geen taal gekozen is. */
   language: string | null;
@@ -358,6 +386,7 @@ export function ProgressProvider({ children }: { children: React.ReactNode }) {
   const value = useMemo<Store>(
     () => ({
       ready: huidig.klaar,
+      synced: huidig.gesynct,
       account: huidig.account,
       language: huidig.taal,
       pack: getLanguage(huidig.taal ?? ""),

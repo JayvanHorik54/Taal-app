@@ -19,8 +19,8 @@ import { cijfer } from "@/lib/srs";
 import { useStore } from "@/lib/store";
 
 export default function NiveautestPage() {
-  const { ready } = useStore();
-  if (!ready) return <Loading />;
+  const { ready, synced } = useStore();
+  if (!ready || !synced) return <Loading />;
   return <Niveautest />;
 }
 

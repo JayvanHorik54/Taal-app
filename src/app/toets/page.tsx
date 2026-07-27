@@ -21,9 +21,9 @@ export default function ToetsPage() {
 
 /** Wacht op de opgeslagen voortgang; anders is er niets om te overhoren. */
 function Gate() {
-  const { ready } = useStore();
+  const { ready, synced } = useStore();
   const deckId = useSearchParams().get("deck");
-  if (!ready) return <Loading />;
+  if (!ready || !synced) return <Loading />;
   return <Toets deckId={deckId} />;
 }
 

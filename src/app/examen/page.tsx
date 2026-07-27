@@ -22,9 +22,9 @@ export default function ExamenPage() {
 
 /** Wacht op de opgeslagen voortgang; anders stelt het examen zich leeg samen. */
 function Gate() {
-  const { ready, progress } = useStore();
+  const { ready, synced, progress } = useStore();
   const parameter = useSearchParams().get("level");
-  if (!ready) return <Loading />;
+  if (!ready || !synced) return <Loading />;
   const level: Level = LEVELS.includes(parameter as Level)
     ? (parameter as Level)
     : progress.level;
