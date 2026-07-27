@@ -1,6 +1,6 @@
 import type { Topic } from "../types";
 
-/** De grammatica-leerlijn A1 t/m B2. Volgorde = leervolgorde. */
+/** De grammatica-leerlijn A1 t/m C1. Volgorde = leervolgorde. */
 export const curriculum: Topic[] = [
   { id: "g01", level: "A1", title: "Lidwoorden: el, la, los, las" },
   { id: "g02", level: "A1", title: "Mannelijk, vrouwelijk en meervoud" },
@@ -36,4 +36,13 @@ export const curriculum: Topic[] = [
   { id: "g32", level: "B2", title: "Indirecte rede en tijdverschuiving" },
   { id: "g33", level: "B2", title: "Aunque, sino, mientras" },
   { id: "g34", level: "B2", title: "Vaste voorzetsels bij werkwoorden" },
+  /* C1 — waar het niet meer om regels gaat maar om register en nuance. */
+  { id: "g35", level: "C1", title: "Subjuntivo in vaste uitdrukkingen" },
+  { id: "g36", level: "C1", title: "Futuro en condicional voor vermoedens" },
+  { id: "g37", level: "C1", title: "Perífrasis verbales: llevar, acabar de, ponerse a" },
+  { id: "g38", level: "C1", title: "Se impersonal en onpersoonlijke constructies" },
+  { id: "g39", level: "C1", title: "Woordvolgorde en nadruk" },
+  { id: "g40", level: "C1", title: "Verbindingswoorden voor betoog en tegenwerping" },
+  { id: "g41", level: "C1", title: "Register: formeel, informeel en schrijftaal" },
+  { id: "g42", level: "C1", title: "Idioom met werkwoorden: dar, echar, tomar" },
 ];

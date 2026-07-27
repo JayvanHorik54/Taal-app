@@ -17,9 +17,10 @@ import type { Level } from "../content/types.ts";
  */
 export const TEMPO: Record<Level, number> = {
   A1: 0.75,
-  A2: 0.85,
-  B1: 0.95,
-  B2: 1,
+  A2: 0.83,
+  B1: 0.9,
+  B2: 0.95,
+  C1: 1,
 };
 
 /** Wat de knop "langzamer" eraf haalt. */

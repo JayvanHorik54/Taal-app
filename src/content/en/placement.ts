@@ -181,4 +181,48 @@ export const placement: PlacementItem[] = [
     answer: "have I seen",
     why: "Na een ontkennend woord vooraan draait de zin om.",
   },
+
+  /* ── C1 ─────────────────────────────────────────────────── */
+  {
+    level: "C1",
+    prompt: "___ I need most is a good night's sleep.",
+    options: ["What", "That", "Which"],
+    answer: "What",
+    why: "In deze nadrukzin vervangt what het hele onderwerp: wat ik nodig heb, is…",
+  },
+  {
+    level: "C1",
+    prompt: "If she had taken that job, she ___ in Berlin now.",
+    options: ["would be", "would have been", "will be"],
+    answer: "would be",
+    why: "Verleden voorwaarde, gevolg in het heden: dat mengt de derde en de tweede conditional.",
+  },
+  {
+    level: "C1",
+    prompt: "It is essential that every application ___ submitted before Friday.",
+    options: ["be", "is", "will be"],
+    answer: "be",
+    why: "Na it is essential that volgt de aanvoegende wijs, zonder vervoeging.",
+  },
+  {
+    level: "C1",
+    prompt: "___ in 1890, the building is now a museum.",
+    options: ["Built", "Building", "Having built"],
+    answer: "Built",
+    why: "Het gebouw ondergaat de handeling, dus lijdend: built, niet building.",
+  },
+  {
+    level: "C1",
+    prompt: "The results ___ suggest a link, though more research is needed.",
+    options: ["tend to", "must", "definitely"],
+    answer: "tend to",
+    why: "Tend to zwakt de bewering af — precies wat de tweede zinshelft aankondigt.",
+  },
+  {
+    level: "C1",
+    prompt: "He ___ a fortune in the property market.",
+    options: ["made", "did", "took"],
+    answer: "made",
+    why: "Make a fortune is een vaste combinatie; do en take passen hier niet.",
+  },
 ];

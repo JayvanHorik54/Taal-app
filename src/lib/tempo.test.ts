@@ -21,7 +21,7 @@ describe("spreeksnelheid", () => {
   });
 
   it("praat op het hoogste niveau op normale snelheid", () => {
-    strictEqual(spreeksnelheid("B2"), 1);
+    strictEqual(spreeksnelheid(LEVELS[LEVELS.length - 1]), 1);
   });
 
   it("blijft overal binnen wat de spraaksynthese aankan", () => {

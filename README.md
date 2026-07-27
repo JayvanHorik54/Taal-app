@@ -76,9 +76,9 @@ is dat prima; online niet. Zie `ONLINE-ZETTEN.md` voor het geheel.
 | **Niveautest** | Rondes van zes vragen die steeds moeilijker worden. Bepaalt waar je begint, en zet de woorden van niveaus die je beheerst alvast klaar als herhaling in plaats van als nieuw. |
 | **Muur** | Overzicht van je tegels, je streak, je cijferlijst en de toelatingseisen voor het eindexamen. |
 | **Oefensessie** | Herhaling volgens een SM-2-achtige planning. Per woord wisselt de vraagvorm mee met hoe goed je het kent: herkennen, schrijven, verstaan, invullen in een zin, en uitspreken. |
-| **Woorden** | Zestien lijsten van vijftien woorden per taal, met voorbeeldzinnen. Vertalingen afdekken om jezelf te overhoren. Nieuwe lijsten laten genereren per thema en niveau. |
-| **Regels** | 34 grammaticahoofdstukken per taal (A1–B2), elk toegespitst op wat Nederlandstaligen struikelt. Spaans heeft A1 en A2 uitgeschreven, Engels A1. De rest vult de AI op verzoek aan. |
-| **Eindexamen** | Twintig vragen over woorden én grammatica, zonder feedback tussendoor. Een 6,0 opent het volgende niveau. |
+| **Woorden** | Achtentwintig lijsten per taal — 419 woorden van A1 tot C1, met voorbeeldzinnen. Vertalingen afdekken om jezelf te overhoren. Nieuwe lijsten laten genereren per thema en niveau. |
+| **Regels** | 42 grammaticahoofdstukken per taal (A1–C1), elk toegespitst op waar Nederlandstaligen struikelen. Spaans heeft A1 en A2 uitgeschreven, Engels A1. De rest vult de AI op verzoek aan. |
+| **Eindexamen** | Vijf niveaus, A1 tot C1. Twintig vragen over woorden én grammatica, zonder feedback tussendoor. Een 6,0 opent het volgende niveau. |
 | **Charla** | Gesprekspartner die zich aanpast aan jouw niveau, jouw geleerde woorden verwerkt en fouten corrigeert. Typen of hardop praten. |
 | **Relámpago** | Zestig seconden woorden raden, met combo's. Telt mee voor je herhaling. |
 

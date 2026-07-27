@@ -182,4 +182,48 @@ export const placement: PlacementItem[] = [
     answer: "sea",
     why: "Aunque + subjuntivo maakt er een toegeving van: ook al zou het laat zijn.",
   },
+
+  /* ── C1 ─────────────────────────────────────────────────── */
+  {
+    level: "C1",
+    prompt: "No es que ___ mal, es que no me convence.",
+    options: ["está", "esté", "estará"],
+    answer: "esté",
+    why: "Na no es que volgt altijd de subjuntivo: je ontkent de reden, niet het feit.",
+  },
+  {
+    level: "C1",
+    prompt: "—¿Dónde está Ana? —No sé, ___ en casa.",
+    options: ["está", "estará", "esté"],
+    answer: "estará",
+    why: "De futuro drukt hier geen toekomst uit maar een vermoeden: ze zal wel thuis zijn.",
+  },
+  {
+    level: "C1",
+    prompt: "___ tres años trabajando en esta empresa.",
+    options: ["Llevo", "Hago", "Tengo"],
+    answer: "Llevo",
+    why: "Llevar + tijd + gerundio geeft aan hoe lang iets al aan de gang is.",
+  },
+  {
+    level: "C1",
+    prompt: "En esta oficina ___ mucho los viernes.",
+    options: ["se trabaja", "se trabajan", "trabajarse"],
+    answer: "se trabaja",
+    why: "Het onpersoonlijke se blijft enkelvoud: er wordt gewerkt, zonder wie.",
+  },
+  {
+    level: "C1",
+    prompt: "___ la lluvia, la fiesta fue un éxito.",
+    options: ["Pese a", "Debido a", "Gracias a"],
+    answer: "Pese a",
+    why: "Pese a zet twee dingen tegenover elkaar; debido a en gracias a geven juist de oorzaak.",
+  },
+  {
+    level: "C1",
+    prompt: "Me ___ igual lo que digan los demás.",
+    options: ["da", "hace", "pone"],
+    answer: "da",
+    why: "Dar igual is een vaste uitdrukking: het maakt mij niet uit.",
+  },
 ];

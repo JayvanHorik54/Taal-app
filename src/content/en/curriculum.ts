@@ -40,4 +40,13 @@ export const curriculum: Topic[] = [
   { id: "e32", level: "B2", title: "Vaste voorzetsels bij werkwoorden" },
   { id: "e33", level: "B2", title: "Nadruk en inversie" },
   { id: "e34", level: "B2", title: "Make, do, take en get" },
+  /* C1 — waar het niet meer om regels gaat maar om register en nuance. */
+  { id: "e35", level: "C1", title: "Cleft sentences: it is… that, what… is" },
+  { id: "e36", level: "C1", title: "Mixed conditionals" },
+  { id: "e37", level: "C1", title: "Subjunctive en formeel Engels" },
+  { id: "e38", level: "C1", title: "Participiumzinnen en beknopte bijzinnen" },
+  { id: "e39", level: "C1", title: "Hedging: nuanceren en afzwakken" },
+  { id: "e40", level: "C1", title: "Collocaties: welk woord hoort bij welk" },
+  { id: "e41", level: "C1", title: "Register: formeel, informeel en academisch" },
+  { id: "e42", level: "C1", title: "Idioom en vaste uitdrukkingen" },
 ];

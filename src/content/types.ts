@@ -6,14 +6,15 @@
  * één map onder src/content/<code>/ en één regel in registry.ts.
  */
 
-export type Level = "A1" | "A2" | "B1" | "B2";
+export type Level = "A1" | "A2" | "B1" | "B2" | "C1";
 
-export const LEVELS: Level[] = ["A1", "A2", "B1", "B2"];
+export const LEVELS: Level[] = ["A1", "A2", "B1", "B2", "C1"];
 export const NEXT_LEVEL: Record<Level, Level | null> = {
   A1: "A2",
   A2: "B1",
   B1: "B2",
-  B2: null,
+  B2: "C1",
+  C1: null,
 };
 
 export type Word = {

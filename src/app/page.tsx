@@ -169,14 +169,18 @@ export default function Muur() {
             niveautest opnieuw doen
           </Link>
         </div>
-        <div className="mt-3 grid grid-cols-4 gap-2">
+        {/* Vijf niveaus op een telefoon: krappere marges en een kortere tekst,
+            anders wordt elk vakje 60 pixels breed met "op slot" over twee
+            regels. De maat staat in rem zodat hij meegroeit met de
+            tekstgrootte-instelling. */}
+        <div className="mt-3 grid grid-cols-5 gap-1.5 sm:gap-2">
           {LEVELS.map((rung) => {
             const done = (progress.exams[rung]?.cijfer ?? 0) >= PASS;
             const open = LEVELS.indexOf(rung) <= LEVELS.indexOf(level);
             return (
               <div
                 key={rung}
-                className={`rounded-xl border p-3 text-center ${
+                className={`rounded-xl border p-2 text-center sm:p-3 ${
                   done
                     ? "border-brand bg-brand-soft"
                     : open
@@ -185,8 +189,11 @@ export default function Muur() {
                 }`}
               >
                 <span className="display block text-xl">{rung}</span>
-                <span className="text-[11px] text-ink-faint">
-                  {done ? progress.exams[rung]!.cijfer.toFixed(1) : open ? "bezig" : "op slot"}
+                {/* "open" en "slot" zijn even kort en passen allebei in de 57
+                    pixels die een vakje op een telefoon overhoudt; "bezig" werd
+                    daar afgeknipt. Een gehaald niveau toont gewoon het cijfer. */}
+                <span className="block text-[0.6875rem] leading-tight text-ink-faint">
+                  {done ? progress.exams[rung]!.cijfer.toFixed(1) : open ? "open" : "slot"}
                 </span>
               </div>
             );
