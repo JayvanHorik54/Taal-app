@@ -3,9 +3,11 @@
 Een taalapp die je stap voor stap naar een echt gesprek brengt. Woordenschat is
 het tegelveld, grammatica is de cenefa — de rand die het veld bij elkaar houdt.
 
-**Spaans en Engels** staan er nu in. De engine kent geen van beide talen: alles
-wat taalspecifiek is zit in `src/content/<code>/`. Een taal toevoegen is content
-toevoegen, geen code herschrijven.
+**Spaans, Engels en Grieks** staan er nu in. De engine kent geen van drieën:
+alles wat taalspecifiek is zit in `src/content/<code>/`. Een taal toevoegen is
+content toevoegen, geen code herschrijven — het Grieks bewijst dat, want ook een
+ander alfabet is gewoon content: de letters staan als toetsenbordrij in het
+`LanguagePack` en het nakijken was al script-onafhankelijk.
 
 Je voortgang wordt **per profiel en per taal apart** bijgehouden. Iedereen in
 huis heeft zijn eigen naam en pincode, en deelt niets met de rest — geen streak,
@@ -76,8 +78,8 @@ is dat prima; online niet. Zie `ONLINE-ZETTEN.md` voor het geheel.
 | **Niveautest** | Rondes van zes vragen die steeds moeilijker worden. Bepaalt waar je begint, en zet de woorden van niveaus die je beheerst alvast klaar als herhaling in plaats van als nieuw. |
 | **Muur** | Overzicht van je tegels, je streak, je cijferlijst en de toelatingseisen voor het eindexamen. |
 | **Oefensessie** | Herhaling volgens een SM-2-achtige planning. Per woord wisselt de vraagvorm mee met hoe goed je het kent: herkennen, schrijven, verstaan, invullen in een zin, en uitspreken. |
-| **Woorden** | Achtentwintig lijsten per taal — 419 woorden van A1 tot C1, met voorbeeldzinnen. Vertalingen afdekken om jezelf te overhoren. Nieuwe lijsten laten genereren per thema en niveau. |
-| **Regels** | 42 grammaticahoofdstukken per taal (A1–C1), elk toegespitst op waar Nederlandstaligen struikelen. Spaans heeft A1 en A2 uitgeschreven, Engels A1. De rest vult de AI op verzoek aan. |
+| **Woorden** | Achtentwintig lijsten per taal — ruim vierhonderd woorden van A1 tot C1, met voorbeeldzinnen. Vertalingen afdekken om jezelf te overhoren. Nieuwe lijsten laten genereren per thema en niveau. |
+| **Regels** | 42 grammaticahoofdstukken per taal (A1–C1), elk toegespitst op waar Nederlandstaligen struikelen. Spaans heeft A1 en A2 uitgeschreven, Engels en Grieks A1. De rest vult de AI op verzoek aan. |
 | **Eindexamen** | Vijf niveaus, A1 tot C1. Twintig vragen over woorden én grammatica, zonder feedback tussendoor. Een 6,0 opent het volgende niveau. |
 | **Charla** | Gesprekspartner die zich aanpast aan jouw niveau, jouw geleerde woorden verwerkt en fouten corrigeert. Typen of hardop praten. |
 | **Relámpago** | Zestig seconden woorden raden, met combo's. Telt mee voor je herhaling. |
@@ -86,11 +88,12 @@ is dat prima; online niet. Zie `ONLINE-ZETTEN.md` voor het geheel.
 
 ```
 src/
-  content/          taalspecifiek — hier woont het Spaans
+  content/          taalspecifiek — hier wonen de talen
     types.ts        de modellen: Deck, Lesson, Topic, LanguagePack
     registry.ts     welke talen de app kent
     es/             Spaans: woorden, leerlijn, lessen, scenario's, niveautest
     en/             Engels: idem
+    el/             Grieks: idem, plus het alfabet als toetsenbordrij
   lib/              taalonafhankelijke engine
     srs.ts          herhalingsplanning
     answer.ts       antwoorden nakijken (Unicode-veilig, dus ook Grieks/Cyrillisch)
