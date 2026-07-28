@@ -107,6 +107,36 @@ cd ~/Taal-app && npx vercel --prod
 
 Voortgang raakt daarbij niet kwijt: die staat in de database, niet in de app.
 
+## Automatisch uitrollen (optioneel)
+
+Bovenstaande is met de hand: jij draait het commando, jij bepaalt wanneer. Wil
+je dat een push naar GitHub het werk doet, dan zijn dat twee losse dingen.
+
+**Controleren** gebeurt al vanzelf. `.github/workflows/ci.yml` draait bij elke
+push de lint, de tests en een productiebuild. Je ziet het vinkje bij de commit
+op GitHub; faalt er iets, dan zie je waar.
+
+**Uitrollen** koppel je in het Vercel-dashboard: **Settings → Git → Connect Git
+Repository**. Daarna geldt:
+
+| Wat je pusht | Wat Vercel doet |
+| --- | --- |
+| naar `main` | productie — het echte adres |
+| naar een andere tak | preview — een eigen tijdelijke URL |
+
+Twee dingen om te weten voordat je dat aanzet:
+
+**Previews hebben hun eigen omgevingsvariabelen nodig.** De sleutels uit stap 4
+staan alleen op `production`. Zet ze ook op *Preview*, anders komt een preview
+niet verder dan het aanmeldscherm. Wijs `DATABASE_URL` daar naar een aparte
+database — een preview van een half afgemaakt idee moet niet in de voortgang van
+je huisgenoten kunnen schrijven.
+
+**Vercel wacht niet op de tests.** De koppeling rolt uit zodra je pusht, ook als
+CI rood staat. Wil je dat voorkomen, zet dan op GitHub onder **Settings →
+Branches** een regel op `main` die de check `controleren` verplicht stelt. Dan
+kan er niets naar productie wat niet eerst groen was.
+
 ## Kosten
 
 Vercel en Neon zijn allebei gratis voor dit formaat. Je betaalt alleen voor de

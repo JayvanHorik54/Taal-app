@@ -1,0 +1,38 @@
+name: CI
+
+# Elke push, op elke tak. Een pull request hoeft er niet apart bij: GitHub hangt
+# de uitslag aan de commit, dus je ziet hem ook in de PR terug. Komt er ooit een
+# PR vanuit een fork, dan is `pull_request:` hier nog nodig.
+on: push
+
+# Push je twee keer snel achter elkaar, dan is de eerste ronde niet meer
+# interessant. Die wordt afgebroken in plaats van afgemaakt.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  controleren:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+
+      # `npm ci` en niet `npm install`: die houdt zich precies aan de
+      # package-lock en faalt als die niet klopt met package.json.
+      - run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      # De databasetests draaien tegen PGlite, in hetzelfde proces. Er is dus
+      # geen DATABASE_URL nodig — de tests zetten hun eigen verbinding.
+      - name: Tests
+        run: npm test
+
+      - name: Productiebuild
+        run: npm run build
